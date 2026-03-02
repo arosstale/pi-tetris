@@ -163,6 +163,14 @@ function clearLines(state: GameState): number {
 // Scoring: 1=100, 2=300, 3=500, 4=800
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+// ANSI helpers — module-level so they're always in scope
+const dim    = (s: string) => `\x1b[2m${s}\x1b[22m`;
+const bold   = (s: string) => `\x1b[1m${s}\x1b[22m`;
+const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
+const green  = (s: string) => `\x1b[32m${s}\x1b[0m`;
+const red    = (s: string) => `\x1b[31m${s}\x1b[0m`;
+const cyan   = (s: string) => `\x1b[36m${s}\x1b[0m`;
+
 class TetrisComponent {
 	private state: GameState;
 	private interval: ReturnType<typeof setInterval> | null = null;
@@ -376,13 +384,6 @@ class TetrisComponent {
 		const lines: string[] = [];
 		const cellWidth = 2;
 		const boardPixelWidth = BOARD_WIDTH * cellWidth;
-
-		const dim = (s: string) => `\x1b[2m${s}\x1b[22m`;
-		const bold = (s: string) => `\x1b[1m${s}\x1b[22m`;
-		const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
-		const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
-		const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
-		const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 
 		const boxLine = (content: string, boxWidth: number): string => {
 			const contentLen = visibleWidth(content);
