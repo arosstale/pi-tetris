@@ -2,7 +2,7 @@
 
 Play Tetris inside [pi](https://shittycodingagent.ai)!
 
-![Tetris in your terminal](https://raw.githubusercontent.com/nicobailon/pi-tetris/main/screenshot.png)
+![Tetris in your terminal](https://raw.githubusercontent.com/arosstale/pi-tetris/main/screenshot.png)
 
 ## Install
 
@@ -13,7 +13,7 @@ pi install npm:pi-tetris
 Or from git:
 
 ```bash
-pi install https://github.com/nicobailon/pi-tetris
+pi install https://github.com/arosstale/pi-tetris
 ```
 
 ## Play
