@@ -384,6 +384,12 @@ class TetrisComponent {
 		const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
 		const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 
+		const boxLine = (content: string, boxWidth: number): string => {
+			const contentLen = visibleWidth(content);
+			const padding = Math.max(0, boxWidth - contentLen);
+			return dim(" │") + content + " ".repeat(padding) + dim("│");
+		};
+
 		// Build a composite board with the current piece overlaid
 		const display: (string | null)[][] = this.state.board.map((row) => [...row]);
 
@@ -434,7 +440,7 @@ class TetrisComponent {
 
 		// Title
 		const title = `${bold(cyan("TETRIS"))} │ Level ${bold(yellow(String(this.state.level)))}`;
-		lines.push(this.padLine(this.boxLine(title, totalBoxWidth), width));
+		lines.push(this.padLine(boxLine(title, totalBoxWidth), width));
 
 		// Separator
 		lines.push(this.padLine(dim(` ├${"─".repeat(boardPixelWidth)}┬${"─".repeat(sideWidth)}┤`), width));
@@ -507,7 +513,7 @@ class TetrisComponent {
 		} else {
 			footer = `←→ move  ↑ rotate  ↓ soft  ${bold("SPACE")} drop  ${bold("ESC")} pause`;
 		}
-		lines.push(this.padLine(this.boxLine(footer, totalBoxWidth), width));
+		lines.push(this.padLine(boxLine(footer, totalBoxWidth), width));
 
 		// Bottom border
 		lines.push(this.padLine(dim(` ╰${"─".repeat(totalBoxWidth)}╯`), width));
@@ -519,15 +525,8 @@ class TetrisComponent {
 		return lines;
 	}
 
-	private boxLine(content: string, boxWidth: number): string {
-		const contentLen = visibleWidth(content);
-		const padding = Math.max(0, boxWidth - contentLen);
-		return dim(" │") + content + " ".repeat(padding) + dim("│");
-	}
-
 	private padLine(line: string, width: number): string {
-		const visibleLen = line.replace(/\x1b\[[0-9;]*m/g, "").length;
-		const padding = Math.max(0, width - visibleLen);
+		const padding = Math.max(0, width - visibleWidth(line));
 		return line + " ".repeat(padding);
 	}
 
