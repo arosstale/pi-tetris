@@ -541,6 +541,35 @@ class TetrisComponent {
 
 const TETRIS_SAVE_TYPE = "tetris-save";
 
+// Persistent high score across sessions (file-based)
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+
+const HIGH_SCORE_DIR = join(process.env.HOME || process.env.USERPROFILE || ".", ".pi", "agent", "data");
+const HIGH_SCORE_FILE = join(HIGH_SCORE_DIR, "tetris-highscore.json");
+
+function loadHighScore(): number {
+	try {
+		if (existsSync(HIGH_SCORE_FILE)) {
+			const data = JSON.parse(readFileSync(HIGH_SCORE_FILE, "utf-8"));
+			return data.highScore ?? 0;
+		}
+	} catch {}
+	return 0;
+}
+
+function saveHighScore(score: number, level: number, lines: number) {
+	try {
+		mkdirSync(HIGH_SCORE_DIR, { recursive: true });
+		const existing = loadHighScore();
+		if (score > existing) {
+			writeFileSync(HIGH_SCORE_FILE, JSON.stringify({
+				highScore: score, level, lines, date: new Date().toISOString()
+			}));
+		}
+	} catch {}
+}
+
 export default function (pi: ExtensionAPI) {
 	pi.registerCommand("tetris", {
 		description: "Play Tetris!",
@@ -562,14 +591,26 @@ export default function (pi: ExtensionAPI) {
 				}
 			}
 
+			// Load persistent high score
+			const persistentHighScore = loadHighScore();
+			if (savedState) {
+				savedState.highScore = Math.max(savedState.highScore, persistentHighScore);
+			}
+
 			await ctx.ui.custom((tui, _theme, _kb, done) => {
 				return new TetrisComponent(
 					tui,
 					() => done(undefined),
 					(state) => {
 						pi.appendEntry(TETRIS_SAVE_TYPE, state);
+						// Persist high score across sessions
+						saveHighScore(state.highScore, state.level, state.linesCleared);
 					},
-					savedState,
+					savedState
+						? savedState
+						: persistentHighScore > 0
+							? { highScore: persistentHighScore } as any
+							: undefined,
 				);
 			});
 		},
