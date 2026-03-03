@@ -1,6 +1,6 @@
 {
   "name": "pi-tetris",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Play Tetris in pi! All 7 tetrominoes, ghost piece, wall kicks, score, levels, and session save/restore.",
   "keywords": ["pi-package"],
   "author": "Artale",
