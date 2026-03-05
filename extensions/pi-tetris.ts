@@ -55,15 +55,17 @@ const PIECES: Record<string, number[][][]> = {
 
 const PIECE_NAMES = Object.keys(PIECES);
 
-const PIECE_COLORS: Record<string, string> = {
-	I: "\x1b[36m",  // Cyan
-	O: "\x1b[33m",  // Yellow
-	T: "\x1b[35m",  // Magenta
-	S: "\x1b[32m",  // Green
-	Z: "\x1b[31m",  // Red
-	J: "\x1b[34m",  // Blue
-	L: "\x1b[38;5;208m", // Orange
-};
+const THEMES: { name: string; colors: Record<string, string>; ghost: string; bg: string; border: string }[] = [
+	{ name: "Classic", colors: { I: "\x1b[36m", O: "\x1b[33m", T: "\x1b[35m", S: "\x1b[32m", Z: "\x1b[31m", J: "\x1b[34m", L: "\x1b[38;5;208m" }, ghost: "\x1b[2m", bg: "\x1b[2m", border: "\x1b[2m" },
+	{ name: "Neon", colors: { I: "\x1b[38;2;0;255;255m", O: "\x1b[38;2;255;255;0m", T: "\x1b[38;2;255;0;255m", S: "\x1b[38;2;0;255;100m", Z: "\x1b[38;2;255;50;50m", J: "\x1b[38;2;80;80;255m", L: "\x1b[38;2;255;150;0m" }, ghost: "\x1b[38;2;40;40;60m", bg: "\x1b[38;2;15;15;25m", border: "\x1b[38;2;60;60;100m" },
+	{ name: "Pastel", colors: { I: "\x1b[38;2;150;220;255m", O: "\x1b[38;2;255;240;150m", T: "\x1b[38;2;220;160;255m", S: "\x1b[38;2;160;240;180m", Z: "\x1b[38;2;255;160;160m", J: "\x1b[38;2;160;180;255m", L: "\x1b[38;2;255;200;150m" }, ghost: "\x1b[38;2;60;60;70m", bg: "\x1b[38;2;30;30;35m", border: "\x1b[38;2;80;80;90m" },
+	{ name: "Retro", colors: { I: "\x1b[38;2;0;170;0m", O: "\x1b[38;2;170;170;0m", T: "\x1b[38;2;170;0;170m", S: "\x1b[38;2;0;170;0m", Z: "\x1b[38;2;170;0;0m", J: "\x1b[38;2;0;0;170m", L: "\x1b[38;2;170;85;0m" }, ghost: "\x1b[38;2;30;30;0m", bg: "\x1b[38;2;0;20;0m", border: "\x1b[38;2;0;100;0m" },
+	{ name: "Monochrome", colors: { I: "\x1b[38;2;255;255;255m", O: "\x1b[38;2;200;200;200m", T: "\x1b[38;2;170;170;170m", S: "\x1b[38;2;220;220;220m", Z: "\x1b[38;2;150;150;150m", J: "\x1b[38;2;190;190;190m", L: "\x1b[38;2;240;240;240m" }, ghost: "\x1b[38;2;40;40;40m", bg: "\x1b[38;2;15;15;15m", border: "\x1b[38;2;60;60;60m" },
+	{ name: "Sunset", colors: { I: "\x1b[38;2;255;100;50m", O: "\x1b[38;2;255;200;0m", T: "\x1b[38;2;255;50;100m", S: "\x1b[38;2;255;150;0m", Z: "\x1b[38;2;200;0;80m", J: "\x1b[38;2;150;50;200m", L: "\x1b[38;2;255;180;50m" }, ghost: "\x1b[38;2;50;20;20m", bg: "\x1b[38;2;20;8;15m", border: "\x1b[38;2;100;40;40m" },
+];
+
+let currentTheme = 0;
+function PIECE_COLORS(): Record<string, string> { return THEMES[currentTheme].colors; }
 
 const RESET = "\x1b[0m";
 
@@ -402,6 +404,11 @@ class TetrisComponent {
 		} else if (data === " ") {
 			// Hard drop
 			this.hardDrop();
+		} else if (data === "t" || data === "T") {
+			// Theme cycle
+			currentTheme = (currentTheme + 1) % THEMES.length;
+			this.version++;
+			this.tui.requestRender();
 		}
 	}
 
@@ -473,7 +480,7 @@ class TetrisComponent {
 		lines.push(this.padLine(dim(` ╭${"─".repeat(totalBoxWidth)}╮`), width));
 
 		// Title
-		const title = `${bold(cyan("TETRIS"))} │ Level ${bold(yellow(String(this.state.level)))}`;
+		const title = `${bold(cyan("TETRIS"))} │ Level ${bold(yellow(String(this.state.level)))} │ ${dim(THEMES[currentTheme].name)}`;
 		lines.push(this.padLine(boxLine(title, totalBoxWidth), width));
 
 		// Separator
@@ -485,11 +492,11 @@ class TetrisComponent {
 			for (let x = 0; x < BOARD_WIDTH; x++) {
 				const cell = display[y][x];
 				if (cell === null) {
-					rowStr += dim("· ");
+					rowStr += `${THEMES[currentTheme].bg}· ${RESET}`;
 				} else if (cell === "ghost") {
-					rowStr += dim("░░");
+					rowStr += `${THEMES[currentTheme].ghost}░░${RESET}`;
 				} else {
-					const color = PIECE_COLORS[cell] || "";
+					const color = PIECE_COLORS()[cell] || "";
 					rowStr += `${color}██${RESET}`;
 				}
 			}
@@ -502,7 +509,7 @@ class TetrisComponent {
 				let preview = " ";
 				for (let col = 0; col < shape[row].length; col++) {
 					if (shape[row][col]) {
-						preview += `${PIECE_COLORS[pieceType] || ""}██${RESET}`;
+						preview += `${PIECE_COLORS()[pieceType] || ""}██${RESET}`;
 					} else {
 						preview += "  ";
 					}
@@ -549,7 +556,7 @@ class TetrisComponent {
 		} else if (this.state.gameOver) {
 			footer = `${red(bold("GAME OVER!"))} Press ${bold("R")} to restart, ${bold("Q")} to quit`;
 		} else {
-			footer = `←→ move  ↑ rotate  ↓ soft  ${bold("C")} hold  ${bold("SPACE")} drop  ${bold("ESC")} pause`;
+			footer = `←→ move  ↑ rotate  ↓ soft  ${bold("C")} hold  ${bold("SPACE")} drop  ${bold("T")} theme  ${bold("ESC")} pause`;
 		}
 		lines.push(this.padLine(boxLine(footer, totalBoxWidth), width));
 
