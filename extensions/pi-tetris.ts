@@ -78,6 +78,8 @@ interface GameState {
 	board: (string | null)[][]; // null = empty, string = piece type color
 	current: Piece;
 	next: string;
+	hold: string | null;
+	holdUsed: boolean; // prevent infinite hold swaps per piece
 	score: number;
 	lines: number;
 	level: number;
@@ -109,6 +111,8 @@ function createInitialState(): GameState {
 			y: 0,
 		},
 		next: randomPiece(),
+		hold: null,
+		holdUsed: false,
 		score: 0,
 		lines: 0,
 		level: 1,
@@ -260,6 +264,7 @@ class TetrisComponent {
 			};
 			this.state.next = randomPiece();
 			this.softDrop = false;
+			this.state.holdUsed = false;
 
 			// Check game over
 			if (collides(this.state.board, this.state.current)) {
@@ -366,6 +371,34 @@ class TetrisComponent {
 					}
 				}
 			}
+		} else if (data === "c" || data === "C" || matchesKey(data, "shift+up")) {
+			// Hold piece
+			if (!this.state.holdUsed) {
+				this.state.holdUsed = true;
+				const currentType = this.state.current.type;
+				if (this.state.hold) {
+					// Swap hold and current
+					this.state.current = {
+						type: this.state.hold,
+						rotation: 0,
+						x: Math.floor(BOARD_WIDTH / 2) - 1,
+						y: 0,
+					};
+					this.state.hold = currentType;
+				} else {
+					// First hold: stash current, spawn next
+					this.state.hold = currentType;
+					this.state.current = {
+						type: this.state.next,
+						rotation: 0,
+						x: Math.floor(BOARD_WIDTH / 2) - 1,
+						y: 0,
+					};
+					this.state.next = randomPiece();
+				}
+				this.version++;
+				this.tui.requestRender();
+			}
 		} else if (data === " ") {
 			// Hard drop
 			this.hardDrop();
@@ -461,38 +494,42 @@ class TetrisComponent {
 				}
 			}
 
-			// Side panel content
-			let sideContent = "";
-			if (y === 0) {
-				sideContent = ` ${bold("NEXT")}`;
-			} else if (y >= 1 && y <= 4) {
-				// Render next piece preview
-				const nextRotations = PIECES[this.state.next];
-				const nextShape = nextRotations[0];
-				const previewRow = y - 1;
+			// Side panel content — render piece preview helper
+			const renderPiecePreview = (pieceType: string | null, row: number): string => {
+				if (!pieceType) return " " + dim("——");
+				const shape = PIECES[pieceType][0];
+				if (row >= shape.length) return "";
 				let preview = " ";
-				if (previewRow < nextShape.length) {
-					for (let col = 0; col < nextShape[previewRow].length; col++) {
-						if (nextShape[previewRow][col]) {
-							const color = PIECE_COLORS[this.state.next] || "";
-							preview += `${color}██${RESET}`;
-						} else {
-							preview += "  ";
-						}
+				for (let col = 0; col < shape[row].length; col++) {
+					if (shape[row][col]) {
+						preview += `${PIECE_COLORS[pieceType] || ""}██${RESET}`;
+					} else {
+						preview += "  ";
 					}
 				}
-				sideContent = preview;
-			} else if (y === 6) {
-				sideContent = ` ${bold("SCORE")}`;
-			} else if (y === 7) {
-				sideContent = ` ${yellow(String(this.state.score))}`;
-			} else if (y === 9) {
-				sideContent = ` ${bold("LINES")}`;
+				return preview;
+			};
+
+			let sideContent = "";
+			if (y === 0) {
+				sideContent = ` ${bold("HOLD")}`;
+			} else if (y >= 1 && y <= 3) {
+				sideContent = renderPiecePreview(this.state.hold, y - 1);
+			} else if (y === 5) {
+				sideContent = ` ${bold("NEXT")}`;
+			} else if (y >= 6 && y <= 8) {
+				sideContent = renderPiecePreview(this.state.next, y - 6);
 			} else if (y === 10) {
-				sideContent = ` ${green(String(this.state.lines))}`;
-			} else if (y === 12) {
-				sideContent = ` ${bold("HIGH")}`;
+				sideContent = ` ${bold("SCORE")}`;
+			} else if (y === 11) {
+				sideContent = ` ${yellow(String(this.state.score))}`;
 			} else if (y === 13) {
+				sideContent = ` ${bold("LINES")}`;
+			} else if (y === 14) {
+				sideContent = ` ${green(String(this.state.lines))}`;
+			} else if (y === 16) {
+				sideContent = ` ${bold("HIGH")}`;
+			} else if (y === 17) {
 				sideContent = ` ${yellow(String(this.state.highScore))}`;
 			}
 
@@ -512,7 +549,7 @@ class TetrisComponent {
 		} else if (this.state.gameOver) {
 			footer = `${red(bold("GAME OVER!"))} Press ${bold("R")} to restart, ${bold("Q")} to quit`;
 		} else {
-			footer = `←→ move  ↑ rotate  ↓ soft  ${bold("SPACE")} drop  ${bold("ESC")} pause`;
+			footer = `←→ move  ↑ rotate  ↓ soft  ${bold("C")} hold  ${bold("SPACE")} drop  ${bold("ESC")} pause`;
 		}
 		lines.push(this.padLine(boxLine(footer, totalBoxWidth), width));
 
