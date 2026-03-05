@@ -602,14 +602,16 @@ export default function (pi: ExtensionAPI) {
 					tui,
 					() => done(undefined),
 					(state) => {
-						pi.appendEntry(TETRIS_SAVE_TYPE, state);
-						// Persist high score across sessions
-						saveHighScore(state.highScore, state.level, state.linesCleared);
+						if (state) {
+							pi.appendEntry(TETRIS_SAVE_TYPE, state);
+							// Persist high score across sessions
+							saveHighScore(state.highScore, state.level, state.lines);
+						}
 					},
 					savedState
 						? savedState
 						: persistentHighScore > 0
-							? { highScore: persistentHighScore } as any
+							? { ...createInitialState(), highScore: persistentHighScore }
 							: undefined,
 				);
 			});
