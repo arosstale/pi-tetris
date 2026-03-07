@@ -2,7 +2,9 @@
   "name": "pi-tetris",
   "version": "1.3.0",
   "description": "Play Tetris in pi! All 7 tetrominoes, ghost piece, wall kicks, hold piece, score, levels, and session save/restore.",
-  "keywords": ["pi-package"],
+  "keywords": [
+    "pi-package"
+  ],
   "author": "Artale",
   "license": "MIT",
   "repository": {
@@ -14,6 +16,11 @@
     "@mariozechner/pi-tui": "*"
   },
   "pi": {
-    "extensions": ["./extensions"]
+    "extensions": [
+      "./extensions"
+    ],
+    "commands": [
+      "tetris"
+    ]
   }
 }
